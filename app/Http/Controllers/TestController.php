@@ -2,33 +2,35 @@
   
 namespace App\Http\Controllers;
   
-use App\Test;
+
+use App\Repositories\TestRepository2;
+use App\Repositories\TestRepository1;
 use Illuminate\Http\Request;
-  
+
+
+
 class TestController extends Controller
 {
+
+    protected $test;
+
+    /*
+      Here you can switch repository anytime without affecting the functionality of the controller !
+      Just chnage the classname of constructor's parameter
+    */
+    public function __construct(TestRepository2 $test)
+    {
+        $this->test = $test;
+    }
    
     public function index()
     {
-        $Tests = Test::get();
-  
+        $Tests = $this->test->all();
+    
         return view('index',compact('Tests'));
     }
 
-    public function index2()
-    {
-        $Tests = Test::latest()->paginate(5);
-  
-        return view('index',compact('Tests'))
-            ->with('i', (request()->input('page', 1) - 1) * 5);
-    }
-   
-   
-    public function create()
-    {
-        return view('create');
-    }
-  
+
    
     public function store(Request $request)
     {
@@ -38,27 +40,27 @@ class TestController extends Controller
             'email' => 'email',
         ]);
   
-        Test::create($request->all());
-   
+        $this->test->store($request->all());
+
         return redirect()->route('test.index')
                         ->with('success','Test created successfully.');
+
     }
    
    
-    public function show(Test $Test)
-    {
-        dd($test);
-        // return view('show',compact('Test'));
-    }
+
   
-    public function edit(Test $Test)
+    public function edit($id)
     {
+        $Test = $this->test->get($id);
         return view('edit',compact('Test'));
     }
   
    
-    public function update(Request $request, Test $Test)
+    public function update(Request $request, $id)
     {
+
+       
         if($request->email!=""){
             $request->validate([
                 'name' => 'required',
@@ -73,20 +75,21 @@ class TestController extends Controller
                 
             ]);
         }
-        
   
-        $Test->update($request->all());
-  
+        $this->test->update($id,$request->all());
+
         return redirect()->route('test.index')
                         ->with('success','Test updated successfully');
+        
     }
   
     
-    public function destroy(Test $Test)
+    public function destroy($id)
     {
-        $Test->delete();
-  
+        $this->test->delete($id);
+
         return redirect()->route('test.index')
-                        ->with('success','Test deleted successfully');
+        ->with('success','Test deleted successfully');
+   
     }
 }
